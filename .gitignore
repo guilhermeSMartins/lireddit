@@ -1,0 +1,8 @@
+backend/node_modules
+backend/dist
+backend/yarn.lock
+frontend/node_modules
+frontend/yarn.lock
+frontend/.gitignore
+backend/.gitignore
+frontend/ssr.txt

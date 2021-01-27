@@ -3,7 +3,6 @@ import {
   Arg,
   Ctx,
   Field,
-  InputType,
   Mutation,
   ObjectType,
   Query,
@@ -13,15 +12,9 @@ import { User } from '../entities/User';
 import { hash, verify } from 'argon2';
 import { EntityManager } from '@mikro-orm/postgresql';
 import { COOKIE_NAME } from '../constants';
-@InputType()
-class UsernamePasswordInput {
-  @Field()
-  username: string;
-
-  @Field()
-  password: string;
-}
-
+import { UsernamePasswordInput } from './UsernamePasswordInput';
+import { validateUser } from '../utils/validateRegister';
+import sendEmail from 'src/utils/sendEmail';
 @ObjectType()
 class FieldError {
   @Field()
@@ -42,6 +35,25 @@ class UserResponse {
 
 @Resolver()
 export class UserResolver {
+  @Mutation(() => Boolean)
+  async forgotPassword(@Arg('email') email: string, @Ctx() { em }: MyContext) {
+    const user = await em.findOne(User, { email });
+
+    if(!user) {
+      //the email is not in the db
+      return true;
+    }
+
+    const token = 'qwfqwdqd22d11';
+
+    await sendEmail(
+      email, 
+      `<a href="http://localhost:3000/change-password/${token}">reset password</a>`  
+    );
+
+    return true;
+  }
+
   @Query(() => User, { nullable: true })
   async me(@Ctx() { req, em }: MyContext) {
     //not logged in
@@ -56,43 +68,30 @@ export class UserResolver {
     @Arg('options') options: UsernamePasswordInput,
     @Ctx() { em, req }: MyContext,
   ): Promise<UserResponse> {
-    const { password, username } = options;
+    console.log(options);
+    const errors = validateUser(options);
 
-    if (username.length <= 3) {
-      return {
-        errors: [
-          {
-            field: 'username',
-            message: 'length must be greater than 3',
-          },
-        ],
-      };
+    if (errors) {
+      return { errors };
     }
 
-    if (password.length <= 2) {
-      return {
-        errors: [
-          {
-            field: 'password',
-            message: 'length must be greater than 2',
-          },
-        ],
-      };
-    }
+    const { password, username, email } = options;
 
     const hashedPassword = await hash(password);
     let user;
     try {
+      //const result = await (em as EntityManager).createQueryBuilder(User).getKnexQuery().insert({ username, password: hashedPassword, email, created_at: new Date(), updated_at: new Date(),}).returning('*');
       const result = await (em as EntityManager)
         .createQueryBuilder(User)
         .getKnexQuery()
         .insert({
-          username,
+          username: username,
           password: hashedPassword,
           created_at: new Date(),
           updated_at: new Date(),
         })
         .returning('*');
+
       user = result[0];
     } catch (err) {
       if (err.code == '23505' || err.detail.includes('already exists'))
@@ -100,7 +99,7 @@ export class UserResolver {
         return {
           errors: [
             {
-              field: 'username',
+              field: 'usernameOrEmail',
               message: 'username already taken',
             },
           ],
@@ -117,12 +116,16 @@ export class UserResolver {
 
   @Mutation(() => UserResponse)
   async login(
-    @Arg('options') options: UsernamePasswordInput,
+    @Arg('usernameOrEmail') usernameOrEmail: string,
+    @Arg('password') password: string,
     @Ctx() { em, req }: MyContext,
   ): Promise<UserResponse> {
-    const { password, username } = options;
-
-    const user = await em.findOne(User, { username });
+    const user = await em.findOne(
+      User,
+      usernameOrEmail.includes('@')
+        ? { email: usernameOrEmail }
+        : { username: usernameOrEmail },
+    );
 
     if (!user) {
       return {

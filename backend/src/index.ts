@@ -6,7 +6,7 @@ import { ApolloServer } from 'apollo-server-express';
 import { buildSchema } from 'type-graphql';
 import { PostResolver } from './resolvers/post';
 import { UserResolver } from './resolvers/user';
-import { createClient } from 'redis';
+import redis from 'ioredis';
 import session from 'express-session';
 import connectRedis from 'connect-redis';
 import { COOKIE_NAME, __prod__ } from './constants';
@@ -14,12 +14,12 @@ import cors from 'cors';
 
 const main = async () => {
   const orm = await MikroORM.init(microConfig);
-  await orm.getMigrator().up();
+  //await orm.getMigrator().up();
 
   const app = express();
 
   const RedisStore = connectRedis(session);
-  const redisClient = createClient();
+  const redisClient = redis();
 
   app.use(
     cors({
