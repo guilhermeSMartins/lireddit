@@ -1,40 +1,46 @@
-import {
-  createTestAccount,
-  createTransport,
-  getTestMessageUrl,
-} from 'nodemailer';
+import nodemailer from "nodemailer";
 
-export async function sendEmail(to: string, html: string) {
-  // Generate test SMTP service account from ethereal.email
-  // Only needed if you don't have a real mail account for testing
-  //   let testAccount = await createTestAccount();
-  //   console.log(testAccount);
+export async function sendEmail(to: string,html: string) {
+//   let testAccount = await nodemailer.createTestAccount();
+//   console.log('testAccount', testAccount)
+
+  console.log('b');
 
   // create reusable transporter object using the default SMTP transport
-  let transporter = createTransport({
-    host: 'smtp.ethereal.email',
+  let transporter = nodemailer.createTransport({
+    host: "smtp.ethereal.email",
     port: 587,
     secure: false, // true for 465, false for other ports
     auth: {
-      user: 'xzjfmgitwdu2kmew@ethereal.email', // generated ethereal user
-      pass: 'aH6SQ5W7CDPXQJcC6Z', // generated ethereal password
-    },
+        user: process.env.USER_NAME, // generated ethereal user
+        pass: process.env.PASSWORD, // generated ethereal password
+    }
   });
+
+  console.log('c');
 
   // send mail with defined transport object
+
+  // let message = {
+  //   from: '"Fred Foo 👻" <foo@example.com>', // sender address
+  //   to, // list of receivers
+  //   subject: "Change password", // Subject line
+  //   html, 
+  // };
+  
   let info = await transporter.sendMail({
     from: '"Fred Foo 👻" <foo@example.com>', // sender address
-    to: to, // list of receivers
-    subject: 'Hello ✔', // Subject line
-    html, // html body
+    to, // list of receivers
+    subject: "Change password", // Subject line
+    html,
   });
 
-  console.log('Message sent: %s', info.messageId);
-  // Message sent: <b658f8ca-6296-ccf4-8306-87d57a0b4321@example.com>
+  console.log(info);
 
-  // Preview only available when sending through an Ethereal account
-  console.log('Preview URL: %s', getTestMessageUrl(info));
-  // Preview URL: https://ethereal.email/message/WaQKMgKddxQDoou...
+  console.log('d');
+
+  console.log("Message sent: %s", info.messageId);
+  console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
+
+  console.log('e');
 }
-
-export default sendEmail;

@@ -1,48 +1,41 @@
-import { UsernamePasswordInput } from 'src/resolvers/UsernamePasswordInput';
+import { UsernamePasswordInput } from "../resolvers/UsernamePasswordInput";
 
-export const validateUser = (options: UsernamePasswordInput) => {
-  const { email, password, username } = options;
-
-  console.log(`
-  \n${email}
-  \n${password}
-  \n${username}`);
-
-  if (username.length <= 3) {
+export const validateRegister = (options: UsernamePasswordInput) => {
+  if (!options.email.includes("@")) {
     return [
       {
-        field: 'username',
-        message: 'length must be greater than 3',
+        field: "email",
+        message: "invalid email",
       },
     ];
   }
 
-  if (username.includes('@')) {
+  if (options.username.length <= 2) {
     return [
       {
-        field: 'username',
-        message: 'cannot include an @',
+        field: "username",
+        message: "length must be greater than 2",
       },
     ];
   }
 
-  if (!email.includes('@')) {
+  if (options.username.includes("@")) {
     return [
       {
-        field: 'email',
-        message: 'invalid email',
+        field: "username",
+        message: "cannot include an @",
       },
     ];
   }
 
-  if (password.length <= 2) {
+  if (options.password.length <= 2) {
     return [
       {
-        field: 'password',
-        message: 'length must be greater than 2',
+        field: "password",
+        message: "length must be greater than 2",
       },
     ];
   }
 
   return null;
-};
+}
